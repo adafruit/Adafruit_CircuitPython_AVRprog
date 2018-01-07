@@ -33,11 +33,10 @@ TODO(description)
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
-import busio
 from digitalio import Direction, DigitalInOut
 
 _SLOW_CLOCK = 100000
-_FAST_CLOCK = 2000000
+_FAST_CLOCK = 1000000
 
 class AVRprog:
     """
@@ -47,25 +46,14 @@ class AVRprog:
     """
     _spi = None
     _rst = None
-    _mosi = None
-    _miso = None
-    _sck = None
 
-    def init(self, sck_pin, mosi_pin, miso_pin, rst_pin):
+    def init(self, spi_bus, rst_pin):
         """
         Initialize the programmer with SPI pins that will be used to
         communicate with the chip. Currently only hardware-SPI pins are
         supported!
         """
-        self._spi = busio.SPI(sck_pin, mosi_pin, miso_pin)
-        #except:
-        #    pins = [DigitalInOut(p) for p in (sck_pin, mosi_pin, miso_pin)]
-        #    self._sck, self._mosi, self._miso = pins
-        #    self._sck.direction = Direction.OUTPUT
-        #    self._sck.value = False
-        #    self._mosi.direction = Direction.OUTPUT
-        #    self._miso.direction = Direction.INPUT
-
+        self._spi = spi_bus
         self._rst = DigitalInOut(rst_pin)
         self._rst.direction = Direction.OUTPUT
         self._rst.value = True
@@ -99,28 +87,33 @@ class AVRprog:
         self.erase_chip()
 
         self.begin()
-        hexfile = open(file_name, 'r')
+
+        # create a file state dictionary
+        file_state = {'line': 0, 'ext_addr': 0, 'eof': False}
+        file_state['f'] = open(file_name, 'r')
 
         page_size = chip['page_size']
 
         for page_addr in range(0, chip['flash_size'], page_size):
-            #print("Programming page $%04X" % page_addr)
+            if verbose:
+                print("Programming page $%04X..." % page_addr, end="")
             page_buffer = bytearray(page_size)
             for b in range(page_size):
                 page_buffer[b] = 0xFF     # make an empty page
 
-            read_hex_page(hexfile, page_addr, page_size, page_buffer)
+            read_hex_page(file_state, page_addr, page_size, page_buffer)
 
             if all([v == 0xFF for v in page_buffer]):
-                #print("Skipping empty page")
+                if verbose:
+                    print("skipping")
                 continue
 
-            if verbose:
-                print("Programming page @ $%04X" % (page_addr))
             #print("From HEX file: ", page_buffer)
             self._flash_page(bytearray(page_buffer), page_addr, page_size)
 
             if not verify:
+                if verbose:
+                    print("done!")
                 continue
 
             if verbose:
@@ -137,7 +130,10 @@ class AVRprog:
                 self.end()
                 return False
 
-        hexfile.close()
+            if file_state['eof']:
+                break # we're done, bail!
+
+        file_state['f'].close()
         self.end()
         return True
 
@@ -149,21 +145,25 @@ class AVRprog:
         if not self.verify_sig(chip):
             raise RuntimeError("Signature read failure")
 
-        hexfile = open(file_name, 'r')
+        # create a file state dictionary
+        file_state = {'line': 0, 'ext_addr': 0, 'eof': False}
+        file_state['f'] = open(file_name, 'r')
+
         page_size = chip['page_size']
         self.begin()
-        for page_addr in range(0, chip['flash_size'], page_size):
+        for page_addr in range(0x0, chip['flash_size'], page_size):
             page_buffer = bytearray(page_size)
             for b in range(page_size):
                 page_buffer[b] = 0xFF     # make an empty page
 
-            read_hex_page(hexfile, page_addr, page_size, page_buffer)
+            read_hex_page(file_state, page_addr, page_size, page_buffer)
 
             if verbose:
                 print("Verifying page @ $%04X" % page_addr)
             read_buffer = bytearray(page_size)
             self.read(page_addr, read_buffer)
             #print("From memory: ", read_buffer)
+            #print("From file  : ", page_buffer)
 
             if page_buffer != read_buffer:
                 if verbose:
@@ -172,7 +172,11 @@ class AVRprog:
                     # pylint: enable=line-too-long
                 self.end()
                 return False
-        hexfile.close()
+
+            if file_state['eof']:
+                break # we're done, bail!
+
+        file_state['f'].close()
         self.end()
         return True
 
@@ -237,18 +241,16 @@ class AVRprog:
         send the initialization command to get the AVR's attention.
         """
         self._rst.value = False
-        if self._spi:
-            while self._spi and not self._spi.try_lock():
-                pass
-            self._spi.configure(baudrate=clock)
+        while self._spi and not self._spi.try_lock():
+            pass
+        self._spi.configure(baudrate=clock)
         self._transaction((0xAC, 0x53, 0, 0))
 
     def end(self):
         """
         End programming mode: SPI is released, and reset pin set high.
         """
-        if self._spi:
-            self._spi.unlock()
+        self._spi.unlock()
         self._rst.value = True
 
     def read_signature(self):
@@ -269,13 +271,21 @@ class AVRprog:
         directly into 'read_buffer'
         Requires calling begin() beforehand to put in programming mode.
         """
+        last_addr = 0
         for i in range(len(read_buffer)//2):
             read_addr = addr//2 + i # read 'words' so address is half
+
+            if (last_addr >> 16) != (read_addr >> 16):
+                # load extended byte
+                #print("Loading extended address",  read_addr >> 16)
+                self._transaction((0x4D, 0, read_addr >> 16, 0))
             high = self._transaction((0x28, read_addr >> 8, read_addr, 0))[2]
             low = self._transaction((0x20, read_addr >> 8, read_addr, 0))[2]
             #print("%04X: %02X %02X" % (read_addr*2, low, high))
             read_buffer[i*2] = low
             read_buffer[i*2+1] = high
+
+            last_addr = read_addr
 
     #################### Low level
     def _flash_word(self, addr, low, high):
@@ -283,12 +293,16 @@ class AVRprog:
         self._transaction((0x48, addr >> 8, addr, high))
 
     def _flash_page(self, page_buffer, page_addr, page_size):
-        for i in range(page_size/2):
+        page_addr //= 2 # address is by 'words' not bytes!
+        for i in range(page_size/2): # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2*i:2*i+2]
             self._flash_word(i, lo_byte, hi_byte)
-        page_addr //= 2
+
+        # load extended byte
+        self._transaction((0x4D, 0, page_addr >> 16, 0))
+
         commit_reply = self._transaction((0x4C, page_addr >> 8, page_addr, 0))
-        if ((commit_reply[1] << 8) + commit_reply[2]) != page_addr:
+        if ((commit_reply[1] << 8) + commit_reply[2]) != (page_addr & 0xFFFF):
             raise RuntimeError("Failed to commit page to flash")
         self._busy_wait()
 
@@ -296,10 +310,9 @@ class AVRprog:
         reply = bytearray(4)
         command = bytearray([i & 0xFF for i in command])
 
-        if self._spi:
-            self._spi.write_readinto(command, reply)
+        self._spi.write_readinto(command, reply)
         #s = [hex(i) for i in command]
-        #print("Sending %s reply %s" % (command, reply))
+        #print("Sending %s reply %s" % ([hex(i) for i in command], [hex(i) for i in reply]))
         if reply[2] != command[1]:
             raise RuntimeError("SPI transaction failed")
         return reply[1:] # first byte is ignored
@@ -308,7 +321,7 @@ class AVRprog:
         while self._transaction((0xF0, 0, 0, 0))[2] & 0x01:
             pass
 
-def read_hex_page(hexfile, page_addr, page_size, page_buffer):
+def read_hex_page(file_state, page_addr, page_size, page_buffer):
     """
     Helper function that does the Intel Hex parsing. Given an open file
     'hexfile' and our desired buffer address start (page_addr), size
@@ -322,36 +335,51 @@ def read_hex_page(hexfile, page_addr, page_size, page_buffer):
     line does not contain any more data we can use.
     """
     while True:     # read until our page_buff is full!
-        orig_loc = hexfile.tell()  # in case we have to 'back up'
-        line = hexfile.readline()      # read one line from the HEX file
+        orig_loc = file_state['f'].tell()  # in case we have to 'back up'
+        line = file_state['f'].readline()  # read one line from the HEX file
+        file_state['line'] += 1
+
         if not line:
+            file_state['eof'] = True
             return False
         #print(line)
         if line[0] != ':':       # lines must start with ':'
-            raise RuntimeError("HEX line doesn't start with :")
+            raise RuntimeError("HEX line %d doesn't start with :" % file_state['line'])
 
         # Try to parse the line length, address, and record type
         try:
             hex_len = int(line[1:3], 16)
             line_addr = int(line[3:7], 16)
+            file_state['line_addr'] = line_addr
             rec_type = int(line[7:9], 16)
         except ValueError:
-            raise RuntimeError("Could not parse HEX line addr")
+            raise RuntimeError("Could not parse HEX line %d addr" % file_state['line'])
 
+        if file_state['ext_addr']:
+            line_addr += file_state['ext_addr']
         #print("Hex len: %d, addr %04X, record type %d " % (hex_len, line_addr, rec_type))
 
         # We should only look for data type records (0x00)
-        if rec_type == 0x01:
-            return False  # reached end of file
-        elif rec_type != 0x00:
-            raise RuntimeError("Unsupported record type %d" % rec_type)
+        if rec_type == 1:
+            file_state['eof'] = True
+            return False   # reached end of file
+        if rec_type == 2:
+            file_state['ext_addr'] = int(line[9:13], 16) << 4
+            #print("Extended addr: %05X" % file_state['ext_addr'])
+            continue
+        if rec_type == 3:  # sometimes appears, we ignore this
+            continue
+        elif rec_type != 0: # if not the above or a data record...
+            raise RuntimeError("Unsupported record type %d on line %d" %
+                               (rec_type, file_state['line']))
 
         # check if this file file is either after the current page
         # (in which case, we've read all we can for this page and should
-        # commence flashing...)
+        # commence flasing...)
         if line_addr >= (page_addr + page_size):
             #print("Hex is past page address range")
-            hexfile.seek(orig_loc)  # back up!
+            file_state['f'].seek(orig_loc)  # back up!
+            file_state['line'] -= 1
             return True
         # or, this line does not yet reach the current page address, in which
         # case which should just keep reading in hopes we reach the address

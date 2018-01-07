@@ -1,10 +1,21 @@
-# UNO Optiboot programming example
+"""
+UNO Optiboot programming example, be sure you have the UNO wired up so:
+  UNO Ground to CircuitPython GND
+  UNO 5V to CircuitPython USB or make sure the UNO is powered by USB
+  UNO Pin 13 -> CircuitPython SCK
+  UNO Pin 12 -> CircuitPython MISO
+  UNO Pin 11 -> CircuitPython MOSI
+  UNO RESET  -> CircuitPython D5 (or change the init() below to change it!)
+Drag "optiboot_atmega328.hex" onto the CircuitPython disk drive, then open REPL!
+"""
 
 import board
+import busio
 import adafruit_avrprog
 
+spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 avrprog = adafruit_avrprog.AVRprog()
-avrprog.init(board.SCK, board.MOSI, board.MISO, board.D5)
+avrprog.init(spi, board.D5)
 
 # Each chip has to have a definition so the script knows how to find it
 atmega328p = {'name': "ATmega328P"}
@@ -13,12 +24,15 @@ atmega328p['flash_size'] = 32768
 atmega328p['page_size'] = 128
 atmega328p['fuse_mask'] = (0xFF, 0xFF, 0x07, 0x3F)
 
-# Helper to print out errors for us
 def error(err):
+    """ Helper to print out errors for us and then halt """
     print("ERROR: "+err)
     avrprog.end()
     while True:
         pass
+
+while input("Ready to GO, type 'G' here to start> ") != 'G':
+    pass
 
 if not avrprog.verify_sig(atmega328p, verbose=True):
     error("Signature read failure")
@@ -35,7 +49,7 @@ print("Programming flash from file")
 avrprog.program_file(atmega328p, "optiboot_atmega328.hex", verbose=True, verify=True)
 
 avrprog.write_fuses(atmega328p, lock=0x0F)
-if not avrprog.verify_fuses(atmega328p,lock=0x0F):
+if not avrprog.verify_fuses(atmega328p, lock=0x0F):
     error("Failure verifying fuses!")
 
 print("Done!")
