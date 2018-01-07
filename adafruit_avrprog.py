@@ -36,6 +36,9 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 import busio
 from digitalio import Direction, DigitalInOut
 
+_SLOW_CLOCK = 100000
+_FAST_CLOCK = 2000000
+
 class AVRprog:
     """
     Program your favorite AVR chips directly from CircuitPython with this
@@ -73,7 +76,7 @@ class AVRprog:
         Verify that the chip is connected properly, responds to commands,
         and has the correct signature. Returns True/False based on success
         """
-        self.begin()
+        self.begin(clock=_SLOW_CLOCK)
         sig = self.read_signature()
         self.end()
         if verbose:
@@ -179,7 +182,7 @@ class AVRprog:
         Each fuse is bitwise-&'s with the chip's fuse mask for simplicity
         """
         mask = chip['fuse_mask']
-        self.begin()
+        self.begin(clock=_SLOW_CLOCK)
         low = self._transaction((0x50, 0, 0, 0))[2] & mask[0]
         high = self._transaction((0x58, 0x08, 0, 0))[2] & mask[1]
         ext = self._transaction((0x50, 0x08, 0, 0))[2] & mask[2]
@@ -193,7 +196,7 @@ class AVRprog:
         Write any of the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is skipped
         """
-        self.begin()
+        self.begin(clock=_SLOW_CLOCK)
         lock and self._transaction((0xAC, 0xE0, 0, lock))
         low  and self._transaction((0xAC, 0xA0, 0, low))
         high and self._transaction((0xAC, 0xA8, 0, high))
@@ -221,14 +224,14 @@ class AVRprog:
         """
         Fully erases the chip.
         """
-        self.begin()
+        self.begin(clock=_SLOW_CLOCK)
         self._transaction((0xAC, 0x80, 0, 0))
         self._busy_wait()
         self.end()
 
     #################### Mid level
 
-    def begin(self):
+    def begin(self, clock=_FAST_CLOCK):
         """
         Begin programming mode: pull reset pin low, initialize SPI, and
         send the initialization command to get the AVR's attention.
@@ -237,7 +240,7 @@ class AVRprog:
         if self._spi:
             while self._spi and not self._spi.try_lock():
                 pass
-            self._spi.configure(baudrate=1000000)
+            self._spi.configure(baudrate=clock)
         self._transaction((0xAC, 0x53, 0, 0))
 
     def end(self):
