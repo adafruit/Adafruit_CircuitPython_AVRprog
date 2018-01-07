@@ -68,7 +68,7 @@ class AVRprog:
         self._rst.value = True
 
 
-    def verify_sig(self, chip):
+    def verify_sig(self, chip, verbose=False):
         """
         Verify that the chip is connected properly, responds to commands,
         and has the correct signature. Returns True/False based on success
@@ -76,24 +76,26 @@ class AVRprog:
         self.begin()
         sig = self.read_signature()
         self.end()
-        #print("Signature: ", [hex(i) for i in sig])
+        if verbose:
+            print("Found signature: %s" % [hex(i) for i in sig])
         if sig != chip['sig']:
             return False
         return True
 
-    def program_file(self, chip, file_name, verbose=False):
+    def program_file(self, chip, file_name, verbose=False, verify=True):
         """
         Perform a chip erase and program from a file that
-        contains Intel HEX data. Does not verify the memory post-write!
+        contains Intel HEX data. Returns true on verify-success, False on
+        verify-failure. If 'verify' is False, return will always be True
         """
         if not self.verify_sig(chip):
             raise RuntimeError("Signature read failure")
 
-        self.begin()
         if verbose:
             print("Erasing chip....")
         self.erase_chip()
 
+        self.begin()
         hexfile = open(file_name, 'r')
 
         page_size = chip['page_size']
@@ -114,8 +116,27 @@ class AVRprog:
                 print("Programming page @ $%04X" % (page_addr))
             #print("From HEX file: ", page_buffer)
             self._flash_page(bytearray(page_buffer), page_addr, page_size)
+
+            if not verify:
+                continue
+
+            if verbose:
+                print("Verifying page @ $%04X" % page_addr)
+            read_buffer = bytearray(page_size)
+            self.read(page_addr, read_buffer)
+            #print("From memory: ", read_buffer)
+
+            if page_buffer != read_buffer:
+                if verbose:
+                    # pylint: disable=line-too-long
+                    print("Verify fail at address %04X\nPage should be: %s\nBut contains: %s" % (page_addr, page_buffer, read_buffer))
+                    # pylint: enable=line-too-long
+                self.end()
+                return False
+
         hexfile.close()
         self.end()
+        return True
 
     def verify_file(self, chip, file_name, verbose=False):
         """
@@ -195,6 +216,16 @@ class AVRprog:
                 return False
         return True
 
+
+    def erase_chip(self):
+        """
+        Fully erases the chip.
+        """
+        self.begin()
+        self._transaction((0xAC, 0x80, 0, 0))
+        self._busy_wait()
+        self.end()
+
     #################### Mid level
 
     def begin(self):
@@ -223,8 +254,9 @@ class AVRprog:
         Requires calling begin() beforehand to put in programming mode.
         """
         # signature is last byte of two transactions:
-        sig = [self._transaction((0x30, 0, 0x01, 0))[2]]
-        sig.append(self._transaction((0x30, 0, 0x02, 0))[2])
+        sig = []
+        for i in range(3):
+            sig.append(self._transaction((0x30, 0, i, 0))[2])
         return sig
 
     def read(self, addr, read_buffer):
@@ -241,14 +273,6 @@ class AVRprog:
             #print("%04X: %02X %02X" % (read_addr*2, low, high))
             read_buffer[i*2] = low
             read_buffer[i*2+1] = high
-
-    def erase_chip(self):
-        """
-        Fully erases the chip.
-        Requires calling begin() beforehand to put in programming mode.
-        """
-        self._transaction((0xAC, 0x80, 0, 0))
-        self._busy_wait()
 
     #################### Low level
     def _flash_word(self, addr, low, high):
