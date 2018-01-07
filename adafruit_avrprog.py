@@ -49,9 +49,9 @@ class AVRprog:
 
     def init(self, spi_bus, rst_pin):
         """
-        Initialize the programmer with SPI pins that will be used to
-        communicate with the chip. Currently only hardware-SPI pins are
-        supported!
+        Initialize the programmer with an SPI port that will be used to
+        communicate with the chip. Make sure your SPI supports 'write_readinto'
+        Also pass in a reset pin that will be used to get into programming mode
         """
         self._spi = spi_bus
         self._rst = DigitalInOut(rst_pin)
@@ -323,13 +323,19 @@ class AVRprog:
 
 def read_hex_page(file_state, page_addr, page_size, page_buffer):
     """
-    Helper function that does the Intel Hex parsing. Given an open file
-    'hexfile' and our desired buffer address start (page_addr), size
-    (page_size) and an allocated bytearray. This function will try to
-    read the file and fill the page_buffer. If the next line has data
-    that is beyond the size of the page_address, it will return without
-    changing the buffer, so pre-fill it with 0xFF (for sparsely-defined
-    HEX files.
+    Helper function that does the Intel Hex parsing. Takes in a dictionary
+    that contains the file 'state'. The dictionary should have file_state['f']
+    be the file stream object (returned by open), the file_state['line'] which
+    tracks the line number of the file for better debug messages. This function
+    will update 'line' as it reads lines. It will set 'eof' when the file has
+    completed reading. It will also store the 'extended address' state in
+    file_state['ext_addr']
+    In addition to the file, it takes the desired buffer address start
+    (page_addr), size (page_size) and an allocated bytearray.
+    This function will try to read the file and fill the page_buffer.
+    If the next line has data that is beyond the size of the page_address,
+    it will return without changing the buffer, so pre-fill it with 0xFF
+    before calling, for sparsely-defined HEX files.
     Returns False if the file has no more data to read. Returns True if
     we've done the best job we can with filling the buffer and the next
     line does not contain any more data we can use.

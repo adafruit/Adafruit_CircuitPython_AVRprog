@@ -1,4 +1,13 @@
-# Mega STK500 Bootloader programming example
+"""
+Arduino Mega 2560 programming example, be sure you have the Mega/2560 wired up so:
+  Mega Ground to CircuitPython GND
+  Mega 5V to CircuitPythong USB or make sure the Trinket is powered by USB
+  Pin 52 -> CircuitPython SCK
+  Pin 50 -> CircuitPython MISO  - Note this is backwards from what you expect
+  Pin 51 -> CircuitPython MOSI  - Note this is backwards from what you expect
+  RESET  -> CircuitPython D5 (or change the init() below to change it)
+Drag "stk500boot_v2_mega2560.hex" onto the CircuitPython disk drive, then open REPL
+"""
 
 import board
 import busio
@@ -15,12 +24,15 @@ atmega2560['flash_size'] = 262144
 atmega2560['page_size'] = 256
 atmega2560['fuse_mask'] = (0xFF, 0xFF, 0x07, 0x3F)
 
-# Helper to print out errors for us
 def error(err):
+    """ Helper to print out errors for us and then halt """
     print("ERROR: "+err)
     avrprog.end()
     while True:
         pass
+
+while input("Ready to GO, type 'G' here to start> ") != 'G':
+    pass
 
 if not avrprog.verify_sig(atmega2560, verbose=True):
     error("Signature read failure")
@@ -37,7 +49,7 @@ print("Programming flash from file")
 avrprog.program_file(atmega2560, "stk500boot_v2_mega2560.hex", verbose=True, verify=True)
 
 avrprog.write_fuses(atmega2560, lock=0x0F)
-if not avrprog.verify_fuses(atmega2560,lock=0x0F):
+if not avrprog.verify_fuses(atmega2560, lock=0x0F):
     error("Failure verifying fuses!")
 
 print("Done!")
