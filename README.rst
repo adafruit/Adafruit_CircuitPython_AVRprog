@@ -12,7 +12,7 @@ Introduction
     :target: https://discord.gg/nBQh6qu
     :alt: Discord
 
-TODO
+Program your favorite AVR chips directly from CircuitPython with this handy helper class that will let you make stand-alone programmers right from your REPL. Should work with any/all AVR chips, via SPI programming. Tested with ATmega328, ATtiny85 and ATmega2560
 
 Dependencies
 =============
@@ -27,7 +27,7 @@ This is easily achieved by downloading
 Usage Example
 =============
 
-TODO
+See examples folder for full examples that progam various bootloaders onto chips.
 
 API Reference
 =============
