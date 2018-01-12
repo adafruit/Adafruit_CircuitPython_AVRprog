@@ -11,6 +11,7 @@ Drag "optiboot_atmega328.hex" onto the CircuitPython disk drive, then open REPL!
 
 import board
 import busio
+import pulseio
 import adafruit_avrprog
 
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
