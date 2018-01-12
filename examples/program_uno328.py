@@ -17,6 +17,9 @@ spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
+# we can generate an 6 MHz clock for driving bare chips too!
+clock_pwm = pulseio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536//2)
+
 # Each chip has to have a definition so the script knows how to find it
 atmega328p = {'name': "ATmega328P"}
 atmega328p['sig'] = [0x1E, 0x95, 0x0F]
