@@ -55,15 +55,15 @@ _SLOW_CLOCK = 100000
 _FAST_CLOCK = 1000000
 
 class AVRprog:
+    """
+    Initialize the programmer with an SPI port that will be used to
+    communicate with the chip. Make sure your SPI supports 'write_readinto'
+    Also pass in a reset pin that will be used to get into programming mode
+    """
     _spi = None
     _rst = None
 
     def init(self, spi_bus, rst_pin):
-        """
-        Initialize the programmer with an SPI port that will be used to
-        communicate with the chip. Make sure your SPI supports 'write_readinto'
-        Also pass in a reset pin that will be used to get into programming mode
-        """
         self._spi = spi_bus
         self._rst = DigitalInOut(rst_pin)
         self._rst.direction = Direction.OUTPUT
