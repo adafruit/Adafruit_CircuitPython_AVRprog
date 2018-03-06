@@ -20,12 +20,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 """
-`adafruit_AVRprog`
+`adafruit_avrprog`
 ====================================================
 
-TODO(description)
+Program your favorite AVR chips directly from CircuitPython with this
+handy helper class that will let you make stand-alone programmers right
+from your REPL
 
 * Author(s): ladyada
+
+Implementation Notes
+--------------------
+
+**Hardware:**
+
+* See Learn Guide for supported hardware: `Stand-alone programming AVRs using CircuitPython
+  <https://learn.adafruit.com/stand-alone-programming-avrs-using-circuitpython/overview>`_
+
+**Software and Dependencies:**
+
+* Adafruit CircuitPython firmware for the ESP8622 and M0-based boards:
+  https://github.com/adafruit/circuitpython/releases
+
 """
 
 # imports
@@ -40,9 +56,7 @@ _FAST_CLOCK = 1000000
 
 class AVRprog:
     """
-    Program your favorite AVR chips directly from CircuitPython with this
-    handy helper class that will let you make stand-alone programmers right
-    from your REPL
+    Helper class used to program AVR chips from CircuitPython.
     """
     _spi = None
     _rst = None
