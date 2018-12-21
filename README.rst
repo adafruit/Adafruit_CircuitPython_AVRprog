@@ -10,8 +10,8 @@ Introduction
     :target: https://discord.gg/nBQh6qu
     :alt: Discord
 
-.. image:: https://travis-ci.org/adafruit/Adafruit_CircuitPython_AVRprog.svg?branch=master
-    :target: https://travis-ci.org/adafruit/Adafruit_CircuitPython_AVRprog
+.. image:: https://travis-ci.com/adafruit/Adafruit_CircuitPython_AVRprog.svg?branch=master
+    :target: https://travis-ci.com/adafruit/Adafruit_CircuitPython_AVRprog
     :alt: Build Status
 
 Program your favorite AVR chips directly from CircuitPython with this handy helper class that will let you make stand-alone programmers right from your REPL. Should work with any/all AVR chips, via SPI programming. Tested with ATmega328, ATtiny85 and ATmega2560
