@@ -12,8 +12,10 @@ spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
+#pylint: disable-msg=no-member
 # we can generate an 6 MHz clock for driving bare chips too!
 clock_pwm = pulseio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536//2)
+#pylint: enable-msg=no-member
 
 avrprog.begin()
 print("Signature bytes: ", [hex(i) for i in avrprog.read_signature()])
