@@ -1,7 +1,7 @@
 """
 Arduino Mega 2560 programming example, be sure you have the Mega/2560 wired up so:
   Mega Ground to CircuitPython GND
-  Mega 5V to CircuitPythong USB or make sure the Trinket is powered by USB
+  Mega 5V to CircuitPython USB or make sure the Trinket is powered by USB
   Pin 52 -> CircuitPython SCK
   Pin 50 -> CircuitPython MISO  - Note this is backwards from what you expect
   Pin 51 -> CircuitPython MOSI  - Note this is backwards from what you expect
@@ -17,8 +17,18 @@ spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
-# Each chip has to have a definition so the script knows how to find it
-atmega2560 = avrprog.Boards.ATmega2560
+# To program a chip, you'll need to find out the signature, size of the flash,
+# flash-page size and fuse mask. You can find this in the datasheet or in
+# avrdude.conf located at:
+# http://svn.savannah.nongnu.org/viewvc/*checkout*/avrdude/trunk/avrdude/avrdude.conf.in
+# You can also use the predefined values in AVRprog.Boards
+atmega2560 = {
+    'name': "ATmega2560",
+    'sig': [0x1E, 0x98, 0x01],
+    'flash_size': 262144,
+    'page_size': 256,
+    'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+}
 
 def error(err):
     """ Helper to print out errors for us and then halt """
