@@ -55,6 +55,32 @@ _SLOW_CLOCK = 100000
 _FAST_CLOCK = 1000000
 
 class AVRprog:
+    class Boards:
+      """
+      Some well known board definitions
+      """
+      ATtiny85 = {
+        'name': "ATtiny85",
+        'sig': [0x1E, 0x93, 0x0B],
+        'flash_size': 8192,
+        'page_size': 64,
+        'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+      }
+      ATmega328p = {
+        'name': "ATmega328p",
+        'sig': [0x1E, 0x95, 0x0F],
+        'flash_size': 32768,
+        'page_size': 128,
+        'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F),
+      }
+      ATmega2560 = {
+        'name': "ATmega2560",
+        'sig': [0x1E, 0x98, 0x01],
+        'flash_size': 262144,
+        'page_size': 256,
+        'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+      }
+      
     """
     Helper class used to program AVR chips from CircuitPython.
     """

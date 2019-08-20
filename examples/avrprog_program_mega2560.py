@@ -18,11 +18,7 @@ avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
 # Each chip has to have a definition so the script knows how to find it
-atmega2560 = {'name': "ATmega2560"}
-atmega2560['sig'] = [0x1E, 0x98, 0x01]
-atmega2560['flash_size'] = 262144
-atmega2560['page_size'] = 256
-atmega2560['fuse_mask'] = (0xFF, 0xFF, 0x07, 0x3F)
+atmega2560 = avrprog.Boards.ATmega2560
 
 def error(err):
     """ Helper to print out errors for us and then halt """

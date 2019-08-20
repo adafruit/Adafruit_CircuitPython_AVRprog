@@ -18,11 +18,7 @@ avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
 # Each chip has to have a definition so the script knows how to find it
-attiny85 = {'name': "ATtiny85"}
-attiny85['sig'] = [0x1E, 0x93, 0x0B]
-attiny85['flash_size'] = 8192
-attiny85['page_size'] = 64
-attiny85['fuse_mask'] = (0xFF, 0xFF, 0x07, 0x3F)
+attiny85 = avrprog.Boards.ATtiny85
 
 def error(err):
     """ Helper to print out errors for us and then halt """
