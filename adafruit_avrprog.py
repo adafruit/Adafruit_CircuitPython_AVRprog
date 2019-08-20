@@ -59,6 +59,14 @@ class AVRprog:
       """
       Some well known board definitions
       """
+      ATtiny13a = {
+        'name': "ATtiny13a",
+        'sig': [0x1E, 0x90, 0x07],
+        'flash_size': 1024,
+        'page_size': 32,
+        'fuse_mask': (0xFF, 0xFF, 0x00, 0x03),
+        'clock_speed': 100000
+      }
       ATtiny85 = {
         'name': "ATtiny85",
         'sig': [0x1E, 0x93, 0x0B],
