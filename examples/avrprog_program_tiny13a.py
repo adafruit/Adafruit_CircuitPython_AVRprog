@@ -1,12 +1,12 @@
 """
-Trinket/Gemma (ATtiny85) programming example, be sure you have the '85 wired up so:
-  Trinket Ground to CircuitPython GND
-  Trinket USB to CircuitPythong USB or make sure the Trinket is powered by USB
+ATtiny13a programming example, be sure you have the '13a wired up so:
+  ATtiny13a GND to CircuitPython GND
+  ATtiny13a VCC to CircuitPython USB
   Pin 2 -> CircuitPython SCK
   Pin 1 -> CircuitPython MISO
   Pin 0 -> CircuitPython MOSI
   RESET  -> CircuitPython D5 (or change the init() below to change it!)
-Drag "trinket_boot.hex" onto the CircuitPython disk drive, then open REPL!
+Drag "attiny13a_blink.hex" onto the CircuitPython disk drive, then open REPL!
 """
 
 import board
@@ -18,7 +18,7 @@ avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
 # Each chip has to have a definition so the script knows how to find it
-attiny85 = avrprog.Boards.ATtiny85
+attiny13 = avrprog.Boards.ATtiny13a
 
 def error(err):
     """ Helper to print out errors for us and then halt """
@@ -30,15 +30,15 @@ def error(err):
 while input("Ready to GO, type 'G' here to start> ") != 'G':
     pass
 
-if not avrprog.verify_sig(attiny85, verbose=True):
+if not avrprog.verify_sig(attiny13, verbose=True):
     error("Signature read failure")
-print("Found", attiny85['name'])
+print("Found", attiny13['name'])
 
-avrprog.write_fuses(attiny85, low=0xF1, high=0xD5, ext=0x06, lock=0x3F)
-if not avrprog.verify_fuses(attiny85, low=0xF1, high=0xD5, ext=0x06, lock=0x3F):
+avrprog.write_fuses(attiny13, low=0x7A, high=0xFF)
+if not avrprog.verify_fuses(attiny13, low=0x7A, high=0xFF):
     error("Failure verifying fuses!")
 
 print("Programming flash from file")
-avrprog.program_file(attiny85, "trinket_boot.hex", verbose=True, verify=True)
+avrprog.program_file(attiny13, "attiny13a_blink.hex", verbose=True, verify=True)
 
 print("Done!")

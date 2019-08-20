@@ -24,11 +24,7 @@ clock_pwm = pulseio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536//2)
 #pylint: enable-msg=no-member
 
 # Each chip has to have a definition so the script knows how to find it
-atmega328p = {'name': "ATmega328P"}
-atmega328p['sig'] = [0x1E, 0x95, 0x0F]
-atmega328p['flash_size'] = 32768
-atmega328p['page_size'] = 128
-atmega328p['fuse_mask'] = (0xFF, 0xFF, 0x07, 0x3F)
+atmega328p = avrprog.Boards.ATmega328p
 
 def error(err):
     """ Helper to print out errors for us and then halt """

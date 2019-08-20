@@ -58,6 +58,41 @@ class AVRprog:
     """
     Helper class used to program AVR chips from CircuitPython.
     """
+    class Boards:
+        """
+        Some well known board definitions.
+        """
+        # pylint: disable=too-few-public-methods
+        ATtiny13a = {
+            'name': "ATtiny13a",
+            'sig': [0x1E, 0x90, 0x07],
+            'flash_size': 1024,
+            'page_size': 32,
+            'fuse_mask': (0xFF, 0xFF, 0x00, 0x03),
+            'clock_speed': 100000
+        }
+        ATtiny85 = {
+            'name': "ATtiny85",
+            'sig': [0x1E, 0x93, 0x0B],
+            'flash_size': 8192,
+            'page_size': 64,
+            'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+        }
+        ATmega328p = {
+            'name': "ATmega328p",
+            'sig': [0x1E, 0x95, 0x0F],
+            'flash_size': 32768,
+            'page_size': 128,
+            'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F),
+        }
+        ATmega2560 = {
+            'name': "ATmega2560",
+            'sig': [0x1E, 0x98, 0x01],
+            'flash_size': 262144,
+            'page_size': 256,
+            'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+        }
+
     _spi = None
     _rst = None
 
@@ -100,7 +135,8 @@ class AVRprog:
             print("Erasing chip....")
         self.erase_chip()
 
-        self.begin()
+        clock_speed = getattr(chip, 'clock_speed', _FAST_CLOCK)
+        self.begin(clock=clock_speed)
 
         # create a file state dictionary
         file_state = {'line': 0, 'ext_addr': 0, 'eof': False}
@@ -164,7 +200,8 @@ class AVRprog:
         file_state['f'] = open(file_name, 'r')
 
         page_size = chip['page_size']
-        self.begin()
+        clock_speed = getattr(chip, 'clock_speed', _FAST_CLOCK)
+        self.begin(clock=clock_speed)
         for page_addr in range(0x0, chip['flash_size'], page_size):
             page_buffer = bytearray(page_size)
             for b in range(page_size):
