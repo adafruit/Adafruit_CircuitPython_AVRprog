@@ -3,8 +3,8 @@ Simple test
 
 Ensure your device works with this simple test.
 
-.. literalinclude:: ../examples/avrprog_read_signature.py
-    :caption: examples/avrprog_read_signature.py
+.. literalinclude:: ../examples/avrprog_read_signature_simpletest.py
+    :caption: examples/avrprog_read_signature_simpletest.py
     :linenos:
 
 .. literalinclude:: ../examples/avrprog_program_trinket85.py
