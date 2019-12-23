@@ -27,12 +27,8 @@ This is easily achieved by downloading
 `the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
 
 Installing from PyPI
-<<<<<<< HEAD
---------------------
-=======
 ====================
 
->>>>>>> efd266a01f4071d1c1b640e6bd9ffcb7406291d1
 On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
 PyPI <https://pypi.org/project/adafruit-circuitpython-avrprog/>`_. To install for current user:
 
