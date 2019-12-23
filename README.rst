@@ -10,8 +10,8 @@ Introduction
     :target: https://discord.gg/nBQh6qu
     :alt: Discord
 
-.. image:: https://travis-ci.com/adafruit/Adafruit_CircuitPython_AVRprog.svg?branch=master
-    :target: https://travis-ci.com/adafruit/Adafruit_CircuitPython_AVRprog
+.. image:: https://github.com/adafruit/Adafruit_CircuitPython_AVRprog/workflows/Build%20CI/badge.svg
+    :target: https://github.com/adafruit/Adafruit_CircuitPython_AVRprog/actions/
     :alt: Build Status
 
 Program your favorite AVR chips directly from CircuitPython with this handy helper class that will let you make stand-alone programmers right from your REPL. Should work with any/all AVR chips, via SPI programming. Tested with ATmega328, ATtiny85 and ATmega2560
@@ -27,7 +27,12 @@ This is easily achieved by downloading
 `the Adafruit library and driver bundle <https://github.com/adafruit/Adafruit_CircuitPython_Bundle>`_.
 
 Installing from PyPI
+<<<<<<< HEAD
 --------------------
+=======
+====================
+
+>>>>>>> efd266a01f4071d1c1b640e6bd9ffcb7406291d1
 On supported GNU/Linux systems like the Raspberry Pi, you can install the driver locally `from
 PyPI <https://pypi.org/project/adafruit-circuitpython-avrprog/>`_. To install for current user:
 
