@@ -20,19 +20,21 @@ avrprog.init(spi, board.D5)
 # Each chip has to have a definition so the script knows how to find it
 attiny13 = avrprog.Boards.ATtiny13a
 
+
 def error(err):
     """ Helper to print out errors for us and then halt """
-    print("ERROR: "+err)
+    print("ERROR: " + err)
     avrprog.end()
     while True:
         pass
 
-while input("Ready to GO, type 'G' here to start> ") != 'G':
+
+while input("Ready to GO, type 'G' here to start> ") != "G":
     pass
 
 if not avrprog.verify_sig(attiny13, verbose=True):
     error("Signature read failure")
-print("Found", attiny13['name'])
+print("Found", attiny13["name"])
 
 avrprog.write_fuses(attiny13, low=0x7A, high=0xFF)
 if not avrprog.verify_fuses(attiny13, low=0x7A, high=0xFF):

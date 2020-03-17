@@ -23,36 +23,43 @@ avrprog.init(spi, board.D5)
 # http://svn.savannah.nongnu.org/viewvc/*checkout*/avrdude/trunk/avrdude/avrdude.conf.in
 # You can also use the predefined values in AVRprog.Boards
 atmega2560 = {
-    'name': "ATmega2560",
-    'sig': [0x1E, 0x98, 0x01],
-    'flash_size': 262144,
-    'page_size': 256,
-    'fuse_mask': (0xFF, 0xFF, 0x07, 0x3F)
+    "name": "ATmega2560",
+    "sig": [0x1E, 0x98, 0x01],
+    "flash_size": 262144,
+    "page_size": 256,
+    "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
 }
+
 
 def error(err):
     """ Helper to print out errors for us and then halt """
-    print("ERROR: "+err)
+    print("ERROR: " + err)
     avrprog.end()
     while True:
         pass
 
-while input("Ready to GO, type 'G' here to start> ") != 'G':
+
+while input("Ready to GO, type 'G' here to start> ") != "G":
     pass
 
 if not avrprog.verify_sig(atmega2560, verbose=True):
     error("Signature read failure")
-print("Found", atmega2560['name'])
+print("Found", atmega2560["name"])
 
 # Since we are unsetting the lock fuse, an erase is required!
 avrprog.erase_chip()
 
 avrprog.write_fuses(atmega2560, low=0xFF, high=0xD8, ext=0x05, lock=0x3F)
 if not avrprog.verify_fuses(atmega2560, low=0xFF, high=0xD8, ext=0x05, lock=0x3F):
-    error("Failure programming fuses: "+str([hex(i) for i in avrprog.read_fuses(atmega2560)]))
+    error(
+        "Failure programming fuses: "
+        + str([hex(i) for i in avrprog.read_fuses(atmega2560)])
+    )
 
 print("Programming flash from file")
-avrprog.program_file(atmega2560, "stk500boot_v2_mega2560.hex", verbose=True, verify=True)
+avrprog.program_file(
+    atmega2560, "stk500boot_v2_mega2560.hex", verbose=True, verify=True
+)
 
 avrprog.write_fuses(atmega2560, lock=0x0F)
 if not avrprog.verify_fuses(atmega2560, lock=0x0F):
