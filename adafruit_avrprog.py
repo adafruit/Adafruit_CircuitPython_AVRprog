@@ -1,24 +1,7 @@
-# The MIT License (MIT)
+# SPDX-FileCopyrightText: 2017 ladyada for Adafruit Industries
 #
-# Copyright (c) 2017 ladyada for adafruit industries
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# SPDX-License-Identifier: MIT
+
 """
 `adafruit_avrprog`
 ====================================================
@@ -418,8 +401,10 @@ def read_hex_page(file_state, page_addr, page_size, page_buffer):
             line_addr = int(line[3:7], 16)
             file_state["line_addr"] = line_addr
             rec_type = int(line[7:9], 16)
-        except ValueError:
-            raise RuntimeError("Could not parse HEX line %d addr" % file_state["line"])
+        except ValueError as err:
+            raise RuntimeError(
+                "Could not parse HEX line %d addr" % file_state["line"]
+            ) from err
 
         if file_state["ext_addr"]:
             line_addr += file_state["ext_addr"]

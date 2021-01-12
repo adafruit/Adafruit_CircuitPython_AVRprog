@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 """
 UNO Optiboot programming example, be sure you have the UNO wired up so:
   UNO Ground to CircuitPython GND

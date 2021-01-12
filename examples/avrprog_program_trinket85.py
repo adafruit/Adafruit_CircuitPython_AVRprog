@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 """
 Trinket/Gemma (ATtiny85) programming example, be sure you have the '85 wired up so:
   Trinket Ground to CircuitPython GND
