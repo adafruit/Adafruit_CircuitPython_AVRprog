@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 """
 ATtiny13a programming example, be sure you have the '13a wired up so:
   ATtiny13a GND to CircuitPython GND

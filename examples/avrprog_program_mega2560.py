@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
 """
 Arduino Mega 2560 programming example, be sure you have the Mega/2560 wired up so:
   Mega Ground to CircuitPython GND
