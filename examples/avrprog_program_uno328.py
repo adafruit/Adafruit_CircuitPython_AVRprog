@@ -14,7 +14,7 @@ Drag "optiboot_atmega328.hex" onto the CircuitPython disk drive, then open REPL!
 
 import board
 import busio
-import pulseio
+import pwmio
 import adafruit_avrprog
 
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
@@ -23,7 +23,7 @@ avrprog.init(spi, board.D5)
 
 # pylint: disable-msg=no-member
 # we can generate an 6 MHz clock for driving bare chips too!
-clock_pwm = pulseio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536 // 2)
+clock_pwm = pwmio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536 // 2)
 # pylint: enable-msg=no-member
 
 # Each chip has to have a definition so the script knows how to find it
