@@ -138,7 +138,7 @@ class AVRprog:
 
             read_hex_page(file_state, page_addr, page_size, page_buffer)
 
-            if all([v == 0xFF for v in page_buffer]):
+            if all(v == 255 for v in page_buffer):
                 if verbose:
                     print("skipping")
                 continue
