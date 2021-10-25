@@ -56,6 +56,11 @@ Usage Example
 
 See examples folder for full examples that progam various bootloaders onto chips.
 
+Documentation
+=============
+
+API documentation for this library can be found on `Read the Docs <https://circuitpython.readthedocs.io/projects/avrprog/en/latest/>`_.
+
 Contributing
 ============
 
