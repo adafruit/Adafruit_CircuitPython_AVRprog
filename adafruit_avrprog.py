@@ -120,7 +120,7 @@ class AVRprog:
             print("Erasing chip....")
         self.erase_chip()
 
-        clock_speed = getattr(chip, "clock_speed", _FAST_CLOCK)
+        clock_speed = chip.get("clock_speed", _FAST_CLOCK)
         self.begin(clock=clock_speed)
 
         # create a file state dictionary
@@ -188,7 +188,7 @@ class AVRprog:
         file_state["f"] = open(file_name, "r")
 
         page_size = chip["page_size"]
-        clock_speed = getattr(chip, "clock_speed", _FAST_CLOCK)
+        clock_speed = chip.get("clock_speed", _FAST_CLOCK)
         self.begin(clock=clock_speed)
         for page_addr in range(0x0, chip["flash_size"], page_size):
             page_buffer = bytearray(page_size)
