@@ -71,6 +71,13 @@ class AVRprog:
             "page_size": 128,
             "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
         }
+        ATmega644pa = {
+            "name": "ATmega644pa",
+            "sig":  [0x1E, 0x96, 0x0A],
+            "flash_size": 65536,
+            "page_size": 256,
+            "fuse_mask": (0xF7, 0x8F, 0xFD, 0xFF),
+        }
         ATmega2560 = {
             "name": "ATmega2560",
             "sig": [0x1E, 0x98, 0x01],
