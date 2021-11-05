@@ -125,53 +125,53 @@ class AVRprog:
 
         # create a file state dictionary
         file_state = {"line": 0, "ext_addr": 0, "eof": False}
-        file_state["f"] = open(file_name, "r")
+        with open(file_name, "r") as file_state[  # pylint: disable=unspecified-encoding
+            "f"
+        ]:
+            page_size = chip["page_size"]
 
-        page_size = chip["page_size"]
-
-        for page_addr in range(0, chip["flash_size"], page_size):
-            if verbose:
-                print("Programming page $%04X..." % page_addr, end="")
-            page_buffer = bytearray(page_size)
-            for b in range(page_size):
-                page_buffer[b] = 0xFF  # make an empty page
-
-            read_hex_page(file_state, page_addr, page_size, page_buffer)
-
-            if all(v == 255 for v in page_buffer):
+            for page_addr in range(0, chip["flash_size"], page_size):
                 if verbose:
-                    print("skipping")
-                continue
+                    print("Programming page $%04X..." % page_addr, end="")
+                page_buffer = bytearray(page_size)
+                for b in range(page_size):
+                    page_buffer[b] = 0xFF  # make an empty page
 
-            # print("From HEX file: ", page_buffer)
-            self._flash_page(bytearray(page_buffer), page_addr, page_size)
+                read_hex_page(file_state, page_addr, page_size, page_buffer)
 
-            if not verify:
+                if all(v == 255 for v in page_buffer):
+                    if verbose:
+                        print("skipping")
+                    continue
+
+                # print("From HEX file: ", page_buffer)
+                self._flash_page(bytearray(page_buffer), page_addr, page_size)
+
+                if not verify:
+                    if verbose:
+                        print("done!")
+                    continue
+
                 if verbose:
-                    print("done!")
-                continue
+                    print("Verifying page @ $%04X" % page_addr)
+                read_buffer = bytearray(page_size)
+                self.read(page_addr, read_buffer)
+                # print("From memory: ", read_buffer)
 
-            if verbose:
-                print("Verifying page @ $%04X" % page_addr)
-            read_buffer = bytearray(page_size)
-            self.read(page_addr, read_buffer)
-            # print("From memory: ", read_buffer)
+                if page_buffer != read_buffer:
+                    if verbose:
+                        # pylint: disable=line-too-long
+                        print(
+                            "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
+                            % (page_addr, page_buffer, read_buffer)
+                        )
+                        # pylint: enable=line-too-long
+                    self.end()
+                    return False
 
-            if page_buffer != read_buffer:
-                if verbose:
-                    # pylint: disable=line-too-long
-                    print(
-                        "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
-                        % (page_addr, page_buffer, read_buffer)
-                    )
-                    # pylint: enable=line-too-long
-                self.end()
-                return False
+                if file_state["eof"]:
+                    break  # we're done, bail!
 
-            if file_state["eof"]:
-                break  # we're done, bail!
-
-        file_state["f"].close()
         self.end()
         return True
 
@@ -185,40 +185,40 @@ class AVRprog:
 
         # create a file state dictionary
         file_state = {"line": 0, "ext_addr": 0, "eof": False}
-        file_state["f"] = open(file_name, "r")
+        with open(file_name, "r") as file_name[  # pylint: disable=unspecified-encoding
+            "f"
+        ]:
+            page_size = chip["page_size"]
+            clock_speed = getattr(chip, "clock_speed", _FAST_CLOCK)
+            self.begin(clock=clock_speed)
+            for page_addr in range(0x0, chip["flash_size"], page_size):
+                page_buffer = bytearray(page_size)
+                for b in range(page_size):
+                    page_buffer[b] = 0xFF  # make an empty page
 
-        page_size = chip["page_size"]
-        clock_speed = getattr(chip, "clock_speed", _FAST_CLOCK)
-        self.begin(clock=clock_speed)
-        for page_addr in range(0x0, chip["flash_size"], page_size):
-            page_buffer = bytearray(page_size)
-            for b in range(page_size):
-                page_buffer[b] = 0xFF  # make an empty page
+                read_hex_page(file_state, page_addr, page_size, page_buffer)
 
-            read_hex_page(file_state, page_addr, page_size, page_buffer)
-
-            if verbose:
-                print("Verifying page @ $%04X" % page_addr)
-            read_buffer = bytearray(page_size)
-            self.read(page_addr, read_buffer)
-            # print("From memory: ", read_buffer)
-            # print("From file  : ", page_buffer)
-
-            if page_buffer != read_buffer:
                 if verbose:
-                    # pylint: disable=line-too-long
-                    print(
-                        "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
-                        % (page_addr, page_buffer, read_buffer)
-                    )
-                    # pylint: enable=line-too-long
-                self.end()
-                return False
+                    print("Verifying page @ $%04X" % page_addr)
+                read_buffer = bytearray(page_size)
+                self.read(page_addr, read_buffer)
+                # print("From memory: ", read_buffer)
+                # print("From file  : ", page_buffer)
 
-            if file_state["eof"]:
-                break  # we're done, bail!
+                if page_buffer != read_buffer:
+                    if verbose:
+                        # pylint: disable=line-too-long
+                        print(
+                            "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
+                            % (page_addr, page_buffer, read_buffer)
+                        )
+                        # pylint: enable=line-too-long
+                    self.end()
+                    return False
 
-        file_state["f"].close()
+                if file_state["eof"]:
+                    break  # we're done, bail!
+
         self.end()
         return True
 
