@@ -73,7 +73,7 @@ class AVRprog:
         }
         ATmega644pa = {
             "name": "ATmega644pa",
-            "sig":  [0x1E, 0x96, 0x0A],
+            "sig": [0x1E, 0x96, 0x0A],
             "flash_size": 65536,
             "page_size": 256,
             "fuse_mask": (0xF7, 0x8F, 0xFD, 0xFF),
