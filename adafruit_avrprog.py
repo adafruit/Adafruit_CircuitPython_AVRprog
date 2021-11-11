@@ -365,6 +365,7 @@ class AVRprog:
 
 
 def read_hex_page(file_state, page_addr, page_size, page_buffer):
+    # pylint: disable=too-many-branches
     """
     Helper function that does the Intel Hex parsing. Takes in a dictionary
     that contains the file 'state'. The dictionary should have file_state['f']
@@ -419,6 +420,10 @@ def read_hex_page(file_state, page_addr, page_size, page_buffer):
             # print("Extended addr: %05X" % file_state['ext_addr'])
             continue
         if rec_type == 3:  # sometimes appears, we ignore this
+            continue
+        if rec_type == 4:
+            file_state["ext_addr"] = int(line[9:13], 16) << 16
+            # print("ExtLin addr: %05X" % file_state['ext_addr'])
             continue
         if rec_type != 0:  # if not the above or a data record...
             raise RuntimeError(
