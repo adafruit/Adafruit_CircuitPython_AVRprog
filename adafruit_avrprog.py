@@ -251,9 +251,13 @@ class AVRprog:
         """
         self.begin(clock=_SLOW_CLOCK)
         lock and self._transaction((0xAC, 0xE0, 0, lock))
+        self._busy_wait()
         low and self._transaction((0xAC, 0xA0, 0, low))
+        self._busy_wait()
         high and self._transaction((0xAC, 0xA8, 0, high))
+        self._busy_wait()
         ext and self._transaction((0xAC, 0xA4, 0, ext))
+        self._busy_wait()
         self.end()
 
     # pylint: enable=unused-argument,expression-not-assigned
