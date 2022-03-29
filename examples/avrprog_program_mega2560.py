@@ -35,7 +35,7 @@ atmega2560 = {
 
 
 def error(err):
-    """ Helper to print out errors for us and then halt """
+    """Helper to print out errors for us and then halt"""
     print("ERROR: " + err)
     avrprog.end()
     while True:
