@@ -32,7 +32,15 @@ Implementation Notes
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
+import digitalio
+import microcontroller
 from digitalio import Direction, DigitalInOut
+
+try:
+    import typing
+
+except ImportError:
+    pass
 
 _SLOW_CLOCK = 100000
 _FAST_CLOCK = 1000000
@@ -89,7 +97,7 @@ class AVRprog:
     _spi = None
     _rst = None
 
-    def init(self, spi_bus, rst_pin):
+    def init(self, spi_bus, rst_pin: microcontroller.Pin) -> None:
         """
         Initialize the programmer with an SPI port that will be used to
         communicate with the chip. Make sure your SPI supports 'write_readinto'
@@ -100,7 +108,7 @@ class AVRprog:
         self._rst.direction = Direction.OUTPUT
         self._rst.value = True
 
-    def verify_sig(self, chip, verbose=False):
+    def verify_sig(self, chip: dict, verbose: bool = False) -> bool:
         """
         Verify that the chip is connected properly, responds to commands,
         and has the correct signature. Returns True/False based on success
@@ -114,7 +122,7 @@ class AVRprog:
             return False
         return True
 
-    def program_file(self, chip, file_name, verbose=False, verify=True):
+    def program_file(self, chip: dict, file_name, verbose=False, verify=True) -> bool:
         """
         Perform a chip erase and program from a file that
         contains Intel HEX data. Returns true on verify-success, False on
@@ -182,7 +190,7 @@ class AVRprog:
         self.end()
         return True
 
-    def verify_file(self, chip, file_name, verbose=False):
+    def verify_file(self, chip: dict, file_name, verbose: bool = False) -> bool:
         """
         Perform a chip full-flash verification from a file that
         contains Intel HEX data. Returns True/False on success/fail.
@@ -229,7 +237,7 @@ class AVRprog:
         self.end()
         return True
 
-    def read_fuses(self, chip):
+    def read_fuses(self, chip: dict) -> list:
         """
         Read the 4 fuses and return them in a list (low, high, ext, lock)
         Each fuse is bitwise-&'s with the chip's fuse mask for simplicity
@@ -244,7 +252,7 @@ class AVRprog:
         return (low, high, ext, lock)
 
     # pylint: disable=unused-argument,expression-not-assigned
-    def write_fuses(self, chip, low=None, high=None, ext=None, lock=None):
+    def write_fuses(self, chip: dict, low=None, high=None, ext=None, lock=None) -> None:
         """
         Write any of the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is skipped
@@ -262,7 +270,7 @@ class AVRprog:
 
     # pylint: enable=unused-argument,expression-not-assigned
 
-    def verify_fuses(self, chip, low=None, high=None, ext=None, lock=None):
+    def verify_fuses(self, chip: dict, low=None, high=None, ext=None, lock=None) -> bool:
         """
         Verify the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is not checked.
@@ -277,7 +285,7 @@ class AVRprog:
                 return False
         return True
 
-    def erase_chip(self):
+    def erase_chip(self) -> None:
         """
         Fully erases the chip.
         """
@@ -288,7 +296,7 @@ class AVRprog:
 
     #################### Mid level
 
-    def begin(self, clock=_FAST_CLOCK):
+    def begin(self, clock: int = _FAST_CLOCK) -> None:
         """
         Begin programming mode: pull reset pin low, initialize SPI, and
         send the initialization command to get the AVR's attention.
@@ -299,14 +307,14 @@ class AVRprog:
         self._spi.configure(baudrate=clock)
         self._transaction((0xAC, 0x53, 0, 0))
 
-    def end(self):
+    def end(self) -> None:
         """
         End programming mode: SPI is released, and reset pin set high.
         """
         self._spi.unlock()
         self._rst.value = True
 
-    def read_signature(self):
+    def read_signature(self) -> list:
         """
         Read and return the signature of the chip as two bytes in an array.
         Requires calling begin() beforehand to put in programming mode.
@@ -317,7 +325,7 @@ class AVRprog:
             sig.append(self._transaction((0x30, 0, i, 0))[2])
         return sig
 
-    def read(self, addr, read_buffer):
+    def read(self, addr: int, read_buffer: bytes) -> None:
         """
         Read a chunk of memory from address 'addr'. The amount read is the
         same as the size of the bytearray 'read_buffer'. Data read is placed
@@ -345,7 +353,7 @@ class AVRprog:
         self._transaction((0x40, addr >> 8, addr, low))
         self._transaction((0x48, addr >> 8, addr, high))
 
-    def _flash_page(self, page_buffer, page_addr, page_size):
+    def _flash_page(self, page_buffer: float, page_addr: int, page_size: int):
         page_addr //= 2  # address is by 'words' not bytes!
         for i in range(page_size / 2):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
@@ -375,7 +383,7 @@ class AVRprog:
             pass
 
 
-def read_hex_page(file_state, page_addr, page_size, page_buffer):
+def read_hex_page(file_state: dict, page_addr: int, page_size: int, page_buffer: bytearray):
     # pylint: disable=too-many-branches
     """
     Helper function that does the Intel Hex parsing. Takes in a dictionary
