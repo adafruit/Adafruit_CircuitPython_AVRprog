@@ -114,6 +114,7 @@ class AVRprog:
             return False
         return True
 
+    # pylint: disable=too-many-branches
     def program_file(self, chip, file_name, verbose=False, verify=True):
         """
         Perform a chip erase and program from a file that
@@ -243,25 +244,22 @@ class AVRprog:
         self.end()
         return (low, high, ext, lock)
 
-    # pylint: disable=unused-argument,expression-not-assigned
+    # pylint: disable=unused-argument,too-many-arguments
     def write_fuses(self, chip, low=None, high=None, ext=None, lock=None):
         """
         Write any of the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is skipped
         """
+        transaction_comp = (0xE0, 0xA0, 0xA8, 0xA4)
+        fuses = (lock, low, high, ext)
         self.begin(clock=_SLOW_CLOCK)
-        lock and self._transaction((0xAC, 0xE0, 0, lock))
-        self._busy_wait()
-        low and self._transaction((0xAC, 0xA0, 0, low))
-        self._busy_wait()
-        high and self._transaction((0xAC, 0xA8, 0, high))
-        self._busy_wait()
-        ext and self._transaction((0xAC, 0xA4, 0, ext))
-        self._busy_wait()
+        for fuse, comp in zip (fuses, transaction_comp):
+            if fuse:
+                self._transaction((0xAC, comp, 0, fuse))
+            self._busy_wait()
         self.end()
 
-    # pylint: enable=unused-argument,expression-not-assigned
-
+    # pylint: disable=too-many-arguments
     def verify_fuses(self, chip, low=None, high=None, ext=None, lock=None):
         """
         Verify the 4 fuses. If the kwarg low/high/ext/lock is not
