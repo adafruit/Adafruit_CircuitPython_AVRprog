@@ -253,7 +253,7 @@ class AVRprog:
         transaction_comp = (0xE0, 0xA0, 0xA8, 0xA4)
         fuses = (lock, low, high, ext)
         self.begin(clock=_SLOW_CLOCK)
-        for fuse, comp in zip (fuses, transaction_comp):
+        for fuse, comp in zip(fuses, transaction_comp):
             if fuse:
                 self._transaction((0xAC, comp, 0, fuse))
             self._busy_wait()
