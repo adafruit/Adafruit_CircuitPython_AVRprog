@@ -34,7 +34,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
     from os import PathLike
-    from typing import Any, Dict, Optional, Tuple, TypeAlias
+    from typing import Any, Dict, List, Optional, Tuple, TypeAlias, Union
 
     # Technically this type should come from: from _typeshed import FileDescriptorOrPath
     # Unfortunately _typeshed is only in the standard library in newer releases of Python, e.g. 3.11
@@ -49,7 +49,7 @@ except ImportError:
 
 from math import floor
 
-from busio import SPI
+from busio import I2C, SPI
 from digitalio import DigitalInOut, Direction
 
 _SLOW_CLOCK: int = 100000
@@ -107,7 +107,7 @@ class AVRprog:
     _spi: SPI = None
     _rst: DigitalInOut = None
 
-    def init(self, spi_bus: SPI, rst_pin) -> None:
+    def init(self, spi_bus: SPI, rst_pin: Union[SPI, I2C]) -> None:
         """
         Initialize the programmer with an SPI port that will be used to
         communicate with the chip. Make sure your SPI supports 'write_readinto'
@@ -206,8 +206,11 @@ class AVRprog:
         return True
 
     def verify_file(
-        self, chip: Dict[str, Any], file_name: FileDescriptorOrPath, verbose=False
-    ):
+        self,
+        chip: Dict[str, Any],
+        file_name: FileDescriptorOrPath,
+        verbose: bool = False,
+    ) -> bool:
         """
         Perform a chip full-flash verification from a file that
         contains Intel HEX data. Returns True/False on success/fail.
@@ -252,12 +255,12 @@ class AVRprog:
         self.end()
         return True
 
-    def read_fuses(self, chip: Dict[str, Any]) -> tuple:
+    def read_fuses(self, chip: Dict[str, Any]) -> Tuple[int, int, int, int]:
         """
         Read the 4 fuses and return them in a tuple (low, high, ext, lock)
         Each fuse is bitwise-&'s with the chip's fuse mask for simplicity
         """
-        mask = chip["fuse_mask"]
+        mask: Tuple[int, int, int, int] = chip["fuse_mask"]
         self.begin(clock=_SLOW_CLOCK)
         low = self._transaction((0x50, 0, 0, 0))[2] & mask[0]
         high = self._transaction((0x58, 0x08, 0, 0))[2] & mask[1]
@@ -311,7 +314,7 @@ class AVRprog:
                 return False
         return True
 
-    def erase_chip(self):
+    def erase_chip(self) -> None:
         """
         Fully erases the chip.
         """
@@ -340,7 +343,7 @@ class AVRprog:
         self._spi.unlock()
         self._rst.value = True
 
-    def read_signature(self) -> list:
+    def read_signature(self) -> List[int]:
         """
         Read and return the signature of the chip as two bytes in an array.
         Requires calling begin() beforehand to put in programming mode.
@@ -395,7 +398,7 @@ class AVRprog:
             raise RuntimeError("Failed to commit page to flash")
         self._busy_wait()
 
-    def _transaction(self, command: Tuple[int, int, int, int]) -> bytes:
+    def _transaction(self, command: Tuple[int, int, int, int]) -> bytearray:
         reply = bytearray(4)
         command_bytes = bytearray([i & 0xFF for i in command])
 
