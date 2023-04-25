@@ -208,7 +208,7 @@ class AVRprog:
 
         # create a file state dictionary
         file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": TextIOWrapper}
-        with open(file_name, "r") as file_name["f"]:
+        with open(file_name, "r") as file_state["f"]:
             page_size = chip["page_size"]
             clock_speed = chip.get("clock_speed", _FAST_CLOCK)
             self.begin(clock=clock_speed)
