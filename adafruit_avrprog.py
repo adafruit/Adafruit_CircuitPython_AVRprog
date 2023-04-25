@@ -34,12 +34,14 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
     from io import TextIOWrapper
-    from typing import Any, Dict, Optional
+    from typing import Any, Dict, Optional, Tuple
 
     from _typeshed import FileDescriptorOrPath
     from busio import SPI
 except ImportError:
     pass
+
+from math import floor
 
 from digitalio import DigitalInOut, Direction
 
@@ -324,14 +326,14 @@ class AVRprog:
         self._spi.configure(baudrate=clock)
         self._transaction((0xAC, 0x53, 0, 0))
 
-    def end(self):
+    def end(self) -> None:
         """
         End programming mode: SPI is released, and reset pin set high.
         """
         self._spi.unlock()
         self._rst.value = True
 
-    def read_signature(self):
+    def read_signature(self) -> list:
         """
         Read and return the signature of the chip as two bytes in an array.
         Requires calling begin() beforehand to put in programming mode.
@@ -342,7 +344,7 @@ class AVRprog:
             sig.append(self._transaction((0x30, 0, i, 0))[2])
         return sig
 
-    def read(self, addr, read_buffer):
+    def read(self, addr: int, read_buffer: bytearray) -> None:
         """
         Read a chunk of memory from address 'addr'. The amount read is the
         same as the size of the bytearray 'read_buffer'. Data read is placed
@@ -366,13 +368,15 @@ class AVRprog:
             last_addr = read_addr
 
     #################### Low level
-    def _flash_word(self, addr, low, high):
+    def _flash_word(self, addr: int, low: int, high: int) -> None:
         self._transaction((0x40, addr >> 8, addr, low))
         self._transaction((0x48, addr >> 8, addr, high))
 
-    def _flash_page(self, page_buffer, page_addr, page_size):
+    def _flash_page(
+        self, page_buffer: bytearray, page_addr: int, page_size: int
+    ) -> None:
         page_addr //= 2  # address is by 'words' not bytes!
-        for i in range(page_size / 2):  # page indexed by words, not bytes
+        for i in range(floor(page_size / 2)):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
             self._flash_word(i, lo_byte, hi_byte)
 
@@ -384,23 +388,25 @@ class AVRprog:
             raise RuntimeError("Failed to commit page to flash")
         self._busy_wait()
 
-    def _transaction(self, command):
+    def _transaction(self, command: Tuple[int, int, int, int]) -> bytes:
         reply = bytearray(4)
-        command = bytearray([i & 0xFF for i in command])
+        command_bytes = bytearray([i & 0xFF for i in command])
 
-        self._spi.write_readinto(command, reply)
-        # s = [hex(i) for i in command]
-        # print("Sending %s reply %s" % ([hex(i) for i in command], [hex(i) for i in reply]))
-        if reply[2] != command[1]:
+        self._spi.write_readinto(command_bytes, reply)
+        # s = [hex(i) for i in command_bytes]
+        # print("Sending %s reply %s" % ([hex(i) for i in command_bytes], [hex(i) for i in reply]))
+        if reply[2] != command_bytes[1]:
             raise RuntimeError("SPI transaction failed")
         return reply[1:]  # first byte is ignored
 
-    def _busy_wait(self):
+    def _busy_wait(self) -> None:
         while self._transaction((0xF0, 0, 0, 0))[2] & 0x01:
             pass
 
 
-def read_hex_page(file_state, page_addr, page_size, page_buffer):
+def read_hex_page(
+    file_state: Dict[str, Any], page_addr: int, page_size: int, page_buffer: bytearray
+) -> bool:
     # pylint: disable=too-many-branches
     """
     Helper function that does the Intel Hex parsing. Takes in a dictionary
