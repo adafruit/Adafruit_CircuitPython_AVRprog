@@ -33,15 +33,15 @@ __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
-    from io import TextIOWrapper
     from typing import Any, Dict, Optional, Tuple
 
-    from _typeshed import FileDescriptorOrPath
 except ImportError:
     pass
 
+from io import TextIOWrapper
 from math import floor
 
+from _typeshed import FileDescriptorOrPath
 from busio import SPI
 from digitalio import DigitalInOut, Direction
 
