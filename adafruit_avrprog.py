@@ -33,15 +33,22 @@ __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
-    from typing import Any, Dict, Optional, Tuple
+    from os import PathLike
+    from typing import Any, Dict, Optional, Tuple, TypeAlias
+
+    # Technically this type should come from: from _typeshed import FileDescriptorOrPath
+    # Unfortunately _typeshed is only in the standard library in newer releases of Python, e.g. 3.11
+    # Thus have to define a placeholder
+    FileDescriptorOrPath: TypeAlias = (
+        int | str | bytes | PathLike[str] | PathLike[bytes]
+    )
+    from io import TextIOWrapper
 
 except ImportError:
     pass
 
-from io import TextIOWrapper
 from math import floor
 
-from _typeshed import FileDescriptorOrPath
 from busio import SPI
 from digitalio import DigitalInOut, Direction
 
