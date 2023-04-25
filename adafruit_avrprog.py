@@ -37,12 +37,12 @@ try:
     from typing import Any, Dict, Optional, Tuple
 
     from _typeshed import FileDescriptorOrPath
-    from busio import SPI
 except ImportError:
     pass
 
 from math import floor
 
+from busio import SPI
 from digitalio import DigitalInOut, Direction
 
 _SLOW_CLOCK: int = 100000
