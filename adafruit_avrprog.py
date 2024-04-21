@@ -71,6 +71,13 @@ class AVRprog:
             "page_size": 128,
             "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
         }
+        ATmega328pb = {
+            "name": "ATmega328pb",
+            "sig": [0x1E, 0x95, 0x16],
+            "flash_size": 32768,
+            "page_size": 128,
+            "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
+        }
         ATmega644pa = {
             "name": "ATmega644pa",
             "sig": [0x1E, 0x96, 0x0A],
