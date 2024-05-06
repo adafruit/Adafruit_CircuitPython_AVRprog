@@ -33,7 +33,7 @@ __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
-    from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict
+    from typing import List, Optional, Tuple, Union, TypedDict
     from typing_extensions import TypeAlias
     from os import PathLike
     from busio import SPI
@@ -57,7 +57,7 @@ try:
         sig: List[int]
         flash_size: int
         page_size: int
-        fuse_mask: Tuple[int]
+        fuse_mask: Tuple[int, int, int, int]
 
     class FileState(TypedDict):
         """
@@ -159,7 +159,7 @@ class AVRprog:
     # pylint: disable=too-many-branches
     def program_file(
         self,
-        chip: Dict[str, Any],
+        chip: ChipDictionary,
         file_name: FileDescriptorOrPath,
         verbose: bool = False,
         verify: bool = True,
@@ -231,7 +231,7 @@ class AVRprog:
 
     def verify_file(
         self,
-        chip: Dict[str, Any],
+        chip: ChipDictionary,
         file_name: FileDescriptorOrPath,
         verbose: bool = False,
     ) -> bool:
@@ -279,7 +279,7 @@ class AVRprog:
         self.end()
         return True
 
-    def read_fuses(self, chip: Dict[str, Any]) -> Tuple[int, int, int, int]:
+    def read_fuses(self, chip: ChipDictionary) -> Tuple[int, int, int, int]:
         """
         Read the 4 fuses and return them in a tuple (low, high, ext, lock)
         Each fuse is bitwise-&'s with the chip's fuse mask for simplicity
@@ -296,7 +296,7 @@ class AVRprog:
     # pylint: disable=unused-argument,too-many-arguments
     def write_fuses(
         self,
-        chip: Dict[str, Any],
+        chip: ChipDictionary,
         low: Optional[int] = None,
         high: Optional[int] = None,
         ext: Optional[int] = None,
@@ -318,7 +318,7 @@ class AVRprog:
     # pylint: disable=too-many-arguments
     def verify_fuses(
         self,
-        chip: Dict[str, Any],
+        chip: ChipDictionary,
         low: Optional[int] = None,
         high: Optional[int] = None,
         ext: Optional[int] = None,
@@ -439,7 +439,7 @@ class AVRprog:
 
 
 def read_hex_page(
-    file_state: Dict[str, Any], page_addr: int, page_size: int, page_buffer: bytearray
+    file_state: FileState, page_addr: int, page_size: int, page_buffer: bytearray
 ) -> bool:
     # pylint: disable=too-many-branches
     """
