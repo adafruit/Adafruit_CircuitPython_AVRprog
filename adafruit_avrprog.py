@@ -410,7 +410,7 @@ class AVRprog:
         self, page_buffer: bytearray, page_addr: int, page_size: int
     ) -> None:
         page_addr //= 2  # address is by 'words' not bytes!
-        for i in range(page_size / 2):  # page indexed by words, not bytes
+        for i in range(page_size // 2):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
             self._flash_word(i, lo_byte, hi_byte)
 
