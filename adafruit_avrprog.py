@@ -33,23 +33,47 @@ __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
+    from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict
+    from typing_extensions import TypeAlias
     from os import PathLike
-    from typing import Any, Dict, List, Optional, Tuple, TypeAlias, Union
+    from busio import SPI
+    from microcontroller import Pin
 
     # Technically this type should come from: from _typeshed import FileDescriptorOrPath
     # Unfortunately _typeshed is only in the standard library in newer releases of Python, e.g. 3.11
     # Thus have to define a placeholder
-    FileDescriptorOrPath: TypeAlias = (
-        int | str | bytes | PathLike[str] | PathLike[bytes]
-    )
+    FileDescriptorOrPath: TypeAlias = Union[
+        int, str, bytes, PathLike[str], PathLike[bytes]
+    ]
+
     from io import TextIOWrapper
+
+    class ChipDictionary(TypedDict):
+        """
+        Dictionary representing a specific target chip type
+        """
+
+        name: str
+        sig: List[int]
+        flash_size: int
+        page_size: int
+        fuse_mask: Tuple[int]
+
+    class FileState(TypedDict):
+        """
+        Dictionary representing a File State
+        """
+
+        # pylint: disable=invalid-name
+        line: int
+        ext_addr: int
+        eof: bool
+        f: Optional[TextIOWrapper]
 
 except ImportError:
     pass
 
-from math import floor
 
-from busio import I2C, SPI
 from digitalio import DigitalInOut, Direction
 
 _SLOW_CLOCK: int = 100000
@@ -104,10 +128,10 @@ class AVRprog:
             "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
         }
 
-    _spi: SPI = None
-    _rst: DigitalInOut = None
+    _spi: Optional[SPI] = None
+    _rst: Optional[DigitalInOut] = None
 
-    def init(self, spi_bus: SPI, rst_pin: Union[SPI, I2C]) -> None:
+    def init(self, spi_bus: SPI, rst_pin: Pin) -> None:
         """
         Initialize the programmer with an SPI port that will be used to
         communicate with the chip. Make sure your SPI supports 'write_readinto'
@@ -118,7 +142,7 @@ class AVRprog:
         self._rst.direction = Direction.OUTPUT
         self._rst.value = True
 
-    def verify_sig(self, chip: Dict[str, Any], verbose: bool = False) -> bool:
+    def verify_sig(self, chip: ChipDictionary, verbose: bool = False) -> bool:
         """
         Verify that the chip is connected properly, responds to commands,
         and has the correct signature. Returns True/False based on success
@@ -156,7 +180,7 @@ class AVRprog:
         self.begin(clock=clock_speed)
 
         # create a file state dictionary
-        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": TextIOWrapper}
+        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
         with open(file_name, "r") as file_state["f"]:
             page_size = chip["page_size"]
 
@@ -219,7 +243,7 @@ class AVRprog:
             raise RuntimeError("Signature read failure")
 
         # create a file state dictionary
-        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": TextIOWrapper}
+        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
         with open(file_name, "r") as file_state["f"]:
             page_size = chip["page_size"]
             clock_speed = chip.get("clock_speed", _FAST_CLOCK)
@@ -386,7 +410,7 @@ class AVRprog:
         self, page_buffer: bytearray, page_addr: int, page_size: int
     ) -> None:
         page_addr //= 2  # address is by 'words' not bytes!
-        for i in range(floor(page_size / 2)):  # page indexed by words, not bytes
+        for i in range(page_size / 2):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
             self._flash_word(i, lo_byte, hi_byte)
 
