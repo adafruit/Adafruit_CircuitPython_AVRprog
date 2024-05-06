@@ -32,10 +32,52 @@ Implementation Notes
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
-from digitalio import Direction, DigitalInOut
+try:
+    from typing import List, Optional, Tuple, Union, TypedDict
+    from typing_extensions import TypeAlias
+    from os import PathLike
+    from busio import SPI
+    from microcontroller import Pin
 
-_SLOW_CLOCK = 100000
-_FAST_CLOCK = 1000000
+    # Technically this type should come from: from _typeshed import FileDescriptorOrPath
+    # Unfortunately _typeshed is only in the standard library in newer releases of Python, e.g. 3.11
+    # Thus have to define a placeholder
+    FileDescriptorOrPath: TypeAlias = Union[
+        int, str, bytes, PathLike[str], PathLike[bytes]
+    ]
+
+    from io import TextIOWrapper
+
+    class ChipDictionary(TypedDict):
+        """
+        Dictionary representing a specific target chip type
+        """
+
+        name: str
+        sig: List[int]
+        flash_size: int
+        page_size: int
+        fuse_mask: Tuple[int, int, int, int]
+
+    class FileState(TypedDict):
+        """
+        Dictionary representing a File State
+        """
+
+        # pylint: disable=invalid-name
+        line: int
+        ext_addr: int
+        eof: bool
+        f: Optional[TextIOWrapper]
+
+except ImportError:
+    pass
+
+
+from digitalio import DigitalInOut, Direction
+
+_SLOW_CLOCK: int = 100000
+_FAST_CLOCK: int = 1000000
 
 
 class AVRprog:
@@ -93,10 +135,10 @@ class AVRprog:
             "fuse_mask": (0xFF, 0xFF, 0x07, 0x3F),
         }
 
-    _spi = None
-    _rst = None
+    _spi: Optional[SPI] = None
+    _rst: Optional[DigitalInOut] = None
 
-    def init(self, spi_bus, rst_pin):
+    def init(self, spi_bus: SPI, rst_pin: Pin) -> None:
         """
         Initialize the programmer with an SPI port that will be used to
         communicate with the chip. Make sure your SPI supports 'write_readinto'
@@ -107,7 +149,7 @@ class AVRprog:
         self._rst.direction = Direction.OUTPUT
         self._rst.value = True
 
-    def verify_sig(self, chip, verbose=False):
+    def verify_sig(self, chip: ChipDictionary, verbose: bool = False) -> bool:
         """
         Verify that the chip is connected properly, responds to commands,
         and has the correct signature. Returns True/False based on success
@@ -122,7 +164,13 @@ class AVRprog:
         return True
 
     # pylint: disable=too-many-branches
-    def program_file(self, chip, file_name, verbose=False, verify=True):
+    def program_file(
+        self,
+        chip: ChipDictionary,
+        file_name: FileDescriptorOrPath,
+        verbose: bool = False,
+        verify: bool = True,
+    ) -> bool:
         """
         Perform a chip erase and program from a file that
         contains Intel HEX data. Returns true on verify-success, False on
@@ -139,10 +187,8 @@ class AVRprog:
         self.begin(clock=clock_speed)
 
         # create a file state dictionary
-        file_state = {"line": 0, "ext_addr": 0, "eof": False}
-        with open(file_name, "r") as file_state[  # pylint: disable=unspecified-encoding
-            "f"
-        ]:
+        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
+        with open(file_name, "r") as file_state["f"]:
             page_size = chip["page_size"]
 
             for page_addr in range(0, chip["flash_size"], page_size):
@@ -190,7 +236,12 @@ class AVRprog:
         self.end()
         return True
 
-    def verify_file(self, chip, file_name, verbose=False):
+    def verify_file(
+        self,
+        chip: ChipDictionary,
+        file_name: FileDescriptorOrPath,
+        verbose: bool = False,
+    ) -> bool:
         """
         Perform a chip full-flash verification from a file that
         contains Intel HEX data. Returns True/False on success/fail.
@@ -199,10 +250,8 @@ class AVRprog:
             raise RuntimeError("Signature read failure")
 
         # create a file state dictionary
-        file_state = {"line": 0, "ext_addr": 0, "eof": False}
-        with open(file_name, "r") as file_name[  # pylint: disable=unspecified-encoding
-            "f"
-        ]:
+        file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
+        with open(file_name, "r") as file_state["f"]:
             page_size = chip["page_size"]
             clock_speed = chip.get("clock_speed", _FAST_CLOCK)
             self.begin(clock=clock_speed)
@@ -237,12 +286,12 @@ class AVRprog:
         self.end()
         return True
 
-    def read_fuses(self, chip):
+    def read_fuses(self, chip: ChipDictionary) -> Tuple[int, int, int, int]:
         """
-        Read the 4 fuses and return them in a list (low, high, ext, lock)
+        Read the 4 fuses and return them in a tuple (low, high, ext, lock)
         Each fuse is bitwise-&'s with the chip's fuse mask for simplicity
         """
-        mask = chip["fuse_mask"]
+        mask: Tuple[int, int, int, int] = chip["fuse_mask"]
         self.begin(clock=_SLOW_CLOCK)
         low = self._transaction((0x50, 0, 0, 0))[2] & mask[0]
         high = self._transaction((0x58, 0x08, 0, 0))[2] & mask[1]
@@ -252,7 +301,14 @@ class AVRprog:
         return (low, high, ext, lock)
 
     # pylint: disable=unused-argument,too-many-arguments
-    def write_fuses(self, chip, low=None, high=None, ext=None, lock=None):
+    def write_fuses(
+        self,
+        chip: ChipDictionary,
+        low: Optional[int] = None,
+        high: Optional[int] = None,
+        ext: Optional[int] = None,
+        lock: Optional[int] = None,
+    ) -> None:
         """
         Write any of the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is skipped
@@ -267,7 +323,14 @@ class AVRprog:
         self.end()
 
     # pylint: disable=too-many-arguments
-    def verify_fuses(self, chip, low=None, high=None, ext=None, lock=None):
+    def verify_fuses(
+        self,
+        chip: ChipDictionary,
+        low: Optional[int] = None,
+        high: Optional[int] = None,
+        ext: Optional[int] = None,
+        lock: Optional[int] = None,
+    ) -> bool:
         """
         Verify the 4 fuses. If the kwarg low/high/ext/lock is not
         passed in or is None, that fuse is not checked.
@@ -282,7 +345,7 @@ class AVRprog:
                 return False
         return True
 
-    def erase_chip(self):
+    def erase_chip(self) -> None:
         """
         Fully erases the chip.
         """
@@ -293,7 +356,7 @@ class AVRprog:
 
     #################### Mid level
 
-    def begin(self, clock=_FAST_CLOCK):
+    def begin(self, clock: int = _FAST_CLOCK) -> None:
         """
         Begin programming mode: pull reset pin low, initialize SPI, and
         send the initialization command to get the AVR's attention.
@@ -304,14 +367,14 @@ class AVRprog:
         self._spi.configure(baudrate=clock)
         self._transaction((0xAC, 0x53, 0, 0))
 
-    def end(self):
+    def end(self) -> None:
         """
         End programming mode: SPI is released, and reset pin set high.
         """
         self._spi.unlock()
         self._rst.value = True
 
-    def read_signature(self):
+    def read_signature(self) -> List[int]:
         """
         Read and return the signature of the chip as two bytes in an array.
         Requires calling begin() beforehand to put in programming mode.
@@ -322,7 +385,7 @@ class AVRprog:
             sig.append(self._transaction((0x30, 0, i, 0))[2])
         return sig
 
-    def read(self, addr, read_buffer):
+    def read(self, addr: int, read_buffer: bytearray) -> None:
         """
         Read a chunk of memory from address 'addr'. The amount read is the
         same as the size of the bytearray 'read_buffer'. Data read is placed
@@ -346,13 +409,15 @@ class AVRprog:
             last_addr = read_addr
 
     #################### Low level
-    def _flash_word(self, addr, low, high):
+    def _flash_word(self, addr: int, low: int, high: int) -> None:
         self._transaction((0x40, addr >> 8, addr, low))
         self._transaction((0x48, addr >> 8, addr, high))
 
-    def _flash_page(self, page_buffer, page_addr, page_size):
+    def _flash_page(
+        self, page_buffer: bytearray, page_addr: int, page_size: int
+    ) -> None:
         page_addr //= 2  # address is by 'words' not bytes!
-        for i in range(page_size / 2):  # page indexed by words, not bytes
+        for i in range(page_size // 2):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
             self._flash_word(i, lo_byte, hi_byte)
 
@@ -364,23 +429,25 @@ class AVRprog:
             raise RuntimeError("Failed to commit page to flash")
         self._busy_wait()
 
-    def _transaction(self, command):
+    def _transaction(self, command: Tuple[int, int, int, int]) -> bytearray:
         reply = bytearray(4)
-        command = bytearray([i & 0xFF for i in command])
+        command_bytes = bytearray([i & 0xFF for i in command])
 
-        self._spi.write_readinto(command, reply)
-        # s = [hex(i) for i in command]
-        # print("Sending %s reply %s" % ([hex(i) for i in command], [hex(i) for i in reply]))
-        if reply[2] != command[1]:
+        self._spi.write_readinto(command_bytes, reply)
+        # s = [hex(i) for i in command_bytes]
+        # print("Sending %s reply %s" % ([hex(i) for i in command_bytes], [hex(i) for i in reply]))
+        if reply[2] != command_bytes[1]:
             raise RuntimeError("SPI transaction failed")
         return reply[1:]  # first byte is ignored
 
-    def _busy_wait(self):
+    def _busy_wait(self) -> None:
         while self._transaction((0xF0, 0, 0, 0))[2] & 0x01:
             pass
 
 
-def read_hex_page(file_state, page_addr, page_size, page_buffer):
+def read_hex_page(
+    file_state: FileState, page_addr: int, page_size: int, page_buffer: bytearray
+) -> bool:
     # pylint: disable=too-many-branches
     """
     Helper function that does the Intel Hex parsing. Takes in a dictionary
