@@ -14,6 +14,7 @@ Drag "trinket_boot.hex" onto the CircuitPython disk drive, then open REPL!
 
 import board
 import busio
+
 import adafruit_avrprog
 
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)

@@ -15,16 +15,15 @@ Drag "optiboot_atmega328.hex" onto the CircuitPython disk drive, then open REPL!
 import board
 import busio
 import pwmio
+
 import adafruit_avrprog
 
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
 avrprog = adafruit_avrprog.AVRprog()
 avrprog.init(spi, board.D5)
 
-# pylint: disable-msg=no-member
 # we can generate an 6 MHz clock for driving bare chips too!
 clock_pwm = pwmio.PWMOut(board.D9, frequency=6000000, duty_cycle=65536 // 2)
-# pylint: enable-msg=no-member
 
 # Each chip has to have a definition so the script knows how to find it
 atmega328p = avrprog.Boards.ATmega328p
@@ -50,10 +49,7 @@ avrprog.erase_chip()
 
 avrprog.write_fuses(atmega328p, low=0xFF, high=0xDE, ext=0x05, lock=0x3F)
 if not avrprog.verify_fuses(atmega328p, low=0xFF, high=0xDE, ext=0x05, lock=0x3F):
-    error(
-        "Failure programming fuses: "
-        + str([hex(i) for i in avrprog.read_fuses(atmega328p)])
-    )
+    error("Failure programming fuses: " + str([hex(i) for i in avrprog.read_fuses(atmega328p)]))
 
 print("Programming flash from file")
 avrprog.program_file(atmega328p, "optiboot_atmega328.hex", verbose=True, verify=True)
