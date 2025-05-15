@@ -33,18 +33,17 @@ __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_AVRprog.git"
 
 try:
-    from typing import List, Optional, Tuple, Union, TypedDict
-    from typing_extensions import TypeAlias
     from os import PathLike
+    from typing import List, Optional, Tuple, TypedDict, Union
+
     from busio import SPI
     from microcontroller import Pin
+    from typing_extensions import TypeAlias
 
     # Technically this type should come from: from _typeshed import FileDescriptorOrPath
     # Unfortunately _typeshed is only in the standard library in newer releases of Python, e.g. 3.11
     # Thus have to define a placeholder
-    FileDescriptorOrPath: TypeAlias = Union[
-        int, str, bytes, PathLike[str], PathLike[bytes]
-    ]
+    FileDescriptorOrPath: TypeAlias = Union[int, str, bytes, PathLike[str], PathLike[bytes]]
 
     from io import TextIOWrapper
 
@@ -64,7 +63,6 @@ try:
         Dictionary representing a File State
         """
 
-        # pylint: disable=invalid-name
         line: int
         ext_addr: int
         eof: bool
@@ -90,7 +88,6 @@ class AVRprog:
         Some well known board definitions.
         """
 
-        # pylint: disable=too-few-public-methods
         ATtiny13a = {
             "name": "ATtiny13a",
             "sig": [0x1E, 0x90, 0x07],
@@ -158,12 +155,11 @@ class AVRprog:
         sig = self.read_signature()
         self.end()
         if verbose:
-            print("Found signature: %s" % [hex(i) for i in sig])
+            print(f"Found signature: {[hex(i) for i in sig]}")
         if sig != chip["sig"]:
             return False
         return True
 
-    # pylint: disable=too-many-branches
     def program_file(
         self,
         chip: ChipDictionary,
@@ -188,12 +184,12 @@ class AVRprog:
 
         # create a file state dictionary
         file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
-        with open(file_name, "r") as file_state["f"]:
+        with open(file_name) as file_state["f"]:
             page_size = chip["page_size"]
 
             for page_addr in range(0, chip["flash_size"], page_size):
                 if verbose:
-                    print("Programming page $%04X..." % page_addr, end="")
+                    print(f"Programming page ${page_addr:04X}...", end="")
                 page_buffer = bytearray(page_size)
                 for b in range(page_size):
                     page_buffer[b] = 0xFF  # make an empty page
@@ -214,19 +210,16 @@ class AVRprog:
                     continue
 
                 if verbose:
-                    print("Verifying page @ $%04X" % page_addr)
+                    print(f"Verifying page @ ${page_addr:04X}")
                 read_buffer = bytearray(page_size)
                 self.read(page_addr, read_buffer)
                 # print("From memory: ", read_buffer)
 
                 if page_buffer != read_buffer:
                     if verbose:
-                        # pylint: disable=line-too-long
                         print(
-                            "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
-                            % (page_addr, page_buffer, read_buffer)
+                            f"Verify fail at address {page_addr:04X}\nPage should be: {page_buffer}\nBut contains: {read_buffer}"
                         )
-                        # pylint: enable=line-too-long
                     self.end()
                     return False
 
@@ -251,7 +244,7 @@ class AVRprog:
 
         # create a file state dictionary
         file_state = {"line": 0, "ext_addr": 0, "eof": False, "f": None}
-        with open(file_name, "r") as file_state["f"]:
+        with open(file_name) as file_state["f"]:
             page_size = chip["page_size"]
             clock_speed = chip.get("clock_speed", _FAST_CLOCK)
             self.begin(clock=clock_speed)
@@ -263,7 +256,7 @@ class AVRprog:
                 read_hex_page(file_state, page_addr, page_size, page_buffer)
 
                 if verbose:
-                    print("Verifying page @ $%04X" % page_addr)
+                    print(f"Verifying page @ ${page_addr:04X}")
                 read_buffer = bytearray(page_size)
                 self.read(page_addr, read_buffer)
                 # print("From memory: ", read_buffer)
@@ -271,12 +264,9 @@ class AVRprog:
 
                 if page_buffer != read_buffer:
                     if verbose:
-                        # pylint: disable=line-too-long
                         print(
-                            "Verify fail at address %04X\nPage should be: %s\nBut contains: %s"
-                            % (page_addr, page_buffer, read_buffer)
+                            f"Verify fail at address {page_addr:04X}\nPage should be: {page_buffer}\nBut contains: {read_buffer}"
                         )
-                        # pylint: enable=line-too-long
                     self.end()
                     return False
 
@@ -300,7 +290,6 @@ class AVRprog:
         self.end()
         return (low, high, ext, lock)
 
-    # pylint: disable=unused-argument,too-many-arguments
     def write_fuses(
         self,
         chip: ChipDictionary,
@@ -322,7 +311,6 @@ class AVRprog:
             self._busy_wait()
         self.end()
 
-    # pylint: disable=too-many-arguments
     def verify_fuses(
         self,
         chip: ChipDictionary,
@@ -413,9 +401,7 @@ class AVRprog:
         self._transaction((0x40, addr >> 8, addr, low))
         self._transaction((0x48, addr >> 8, addr, high))
 
-    def _flash_page(
-        self, page_buffer: bytearray, page_addr: int, page_size: int
-    ) -> None:
+    def _flash_page(self, page_buffer: bytearray, page_addr: int, page_size: int) -> None:
         page_addr //= 2  # address is by 'words' not bytes!
         for i in range(page_size // 2):  # page indexed by words, not bytes
             lo_byte, hi_byte = page_buffer[2 * i : 2 * i + 2]
@@ -448,7 +434,6 @@ class AVRprog:
 def read_hex_page(
     file_state: FileState, page_addr: int, page_size: int, page_buffer: bytearray
 ) -> bool:
-    # pylint: disable=too-many-branches
     """
     Helper function that does the Intel Hex parsing. Takes in a dictionary
     that contains the file 'state'. The dictionary should have file_state['f']
@@ -486,9 +471,7 @@ def read_hex_page(
             file_state["line_addr"] = line_addr
             rec_type = int(line[7:9], 16)
         except ValueError as err:
-            raise RuntimeError(
-                "Could not parse HEX line %d addr" % file_state["line"]
-            ) from err
+            raise RuntimeError("Could not parse HEX line %d addr" % file_state["line"]) from err
 
         if file_state["ext_addr"]:
             line_addr += file_state["ext_addr"]
@@ -534,13 +517,7 @@ def read_hex_page(
             byte_buffer.append(int(line[9 + i * 2 : 11 + i * 2], 16))
 
         # check chksum now!
-        chksum = (
-            hex_len
-            + (line_addr >> 8)
-            + (line_addr & 0xFF)
-            + rec_type
-            + sum(byte_buffer)
-        )
+        chksum = hex_len + (line_addr >> 8) + (line_addr & 0xFF) + rec_type + sum(byte_buffer)
         # print("checksum: "+hex(chksum))
         if (chksum & 0xFF) != 0:
             raise RuntimeError("HEX Checksum fail")

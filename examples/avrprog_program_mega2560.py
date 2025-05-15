@@ -14,6 +14,7 @@ Drag "stk500boot_v2_mega2560.hex" onto the CircuitPython disk drive, then open R
 
 import board
 import busio
+
 import adafruit_avrprog
 
 spi = busio.SPI(board.SCK, board.MOSI, board.MISO)
@@ -54,15 +55,10 @@ avrprog.erase_chip()
 
 avrprog.write_fuses(atmega2560, low=0xFF, high=0xD8, ext=0x05, lock=0x3F)
 if not avrprog.verify_fuses(atmega2560, low=0xFF, high=0xD8, ext=0x05, lock=0x3F):
-    error(
-        "Failure programming fuses: "
-        + str([hex(i) for i in avrprog.read_fuses(atmega2560)])
-    )
+    error("Failure programming fuses: " + str([hex(i) for i in avrprog.read_fuses(atmega2560)]))
 
 print("Programming flash from file")
-avrprog.program_file(
-    atmega2560, "stk500boot_v2_mega2560.hex", verbose=True, verify=True
-)
+avrprog.program_file(atmega2560, "stk500boot_v2_mega2560.hex", verbose=True, verify=True)
 
 avrprog.write_fuses(atmega2560, lock=0x0F)
 if not avrprog.verify_fuses(atmega2560, lock=0x0F):
