@@ -462,7 +462,7 @@ def read_hex_page(
             return False
         # print(line)
         if line[0] != ":":  # lines must start with ':'
-            raise RuntimeError("HEX line %d doesn't start with :" % file_state["line"])
+            raise RuntimeError(f"HEX line {file_state['line']} doesn't start with :")
 
         # Try to parse the line length, address, and record type
         try:
@@ -471,7 +471,7 @@ def read_hex_page(
             file_state["line_addr"] = line_addr
             rec_type = int(line[7:9], 16)
         except ValueError as err:
-            raise RuntimeError("Could not parse HEX line %d addr" % file_state["line"]) from err
+            raise RuntimeError(f"Could not parse HEX line {file_state['line']} addr") from err
 
         if file_state["ext_addr"]:
             line_addr += file_state["ext_addr"]
@@ -492,9 +492,7 @@ def read_hex_page(
             # print("ExtLin addr: %05X" % file_state['ext_addr'])
             continue
         if rec_type != 0:  # if not the above or a data record...
-            raise RuntimeError(
-                "Unsupported record type %d on line %d" % (rec_type, file_state["line"])
-            )
+            raise RuntimeError(f"Unsupported record type {rec_type} on line {file_state['line']}")
 
         # check if this file file is either after the current page
         # (in which case, we've read all we can for this page and should
